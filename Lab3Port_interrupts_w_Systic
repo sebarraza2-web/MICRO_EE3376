@@ -7,11 +7,23 @@ int ms, sec;
 int min;
 int stop_state;
 char Time[16];
+char name[] = {'G','M','M','H','O','E', 'S'};
 
 void update(){
     sprintf(Time, "%0.2d:%0.2d:%0.2d",  min, sec, ms);
     lcdSetText(Time, 0, 0);
 }
+void show_name(){
+    //char yes;
+    int i;
+    for(i = 0; i <= sizeof(name); i++){
+        sprintf(name, "%c", name[i]);
+        lcdSetText(name, 10, 0);
+        delay_ms(1000);
+    }
+    lcdClear();
+}
+
 void clear(){
     start_state = 0;
     stop_state = 1;
@@ -21,7 +33,8 @@ void clear(){
     counter = 0;
     }
 
-    int main(void) {
+
+int main(void) {
  WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; // Stop WDT
  // Configure GPIO
  P1->DIR = ~(uint8_t) BIT1;
@@ -36,6 +49,7 @@ lcdClear();
     P1->IES = (BIT1 | BIT4 | BIT5); // Interrupt on high-to-low transition
     P1->IFG = 0; // Clear all P1 interrupt flags
     P1->IE = (BIT1 | BIT4 | BIT5); // Enable interrupt for P1.1
+    show_name();
     // Enable Port 1 interrupt on the NVIC
     NVIC->ISER[1] = 1 << ((PORT1_IRQn) & 31);
     // Configure Port J
@@ -49,13 +63,20 @@ lcdClear();
  SysTick->LOAD =300000 -1; // Period = 0x60000
  SysTick->VAL = 0x01; // Clear value by writing dummy value
  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // Enable interrupt
+
+
  // Enable global interrupt
  __enable_irq();
  SCB->SCR |= SCB_SCR_SLEEPONEXIT_Msk; // Sleep on exit from ISR
  __DSB(); // Ensure SLEEPONEXIT takes effect immediately
-     while (1){
-     __sleep();
-    }
+ __sleep();
+
+     //while(1){
+        // show_name();
+        //
+         //break();
+     //}
+
 }/// End of main
 // Interrupt service routine (ISR) invoked when SysTick down counter reaches 0.
 
@@ -85,13 +106,16 @@ lcdClear();
 
 void SysTick_Handler(void){
     update();
+    //show_name();
     if(stop_state == 0){
         if(start_state == 1){
             ms++;
             if (ms == 10){
                 sec++;
+                //show_name();
                 ms = 0;
                 if(sec == 60){
+                    //show_name();
                     min++;
                     sec=0;
                 }
@@ -100,4 +124,6 @@ void SysTick_Handler(void){
             }
         }
     }
+
+
 
