@@ -7,7 +7,7 @@ int ms, sec;
 int min;
 int stop_state;
 char Time[16];
-char name[] = {'G','M','M','H','O','E', 'S'};
+char name[] = {'S','e','e','b','a','s'};
 
 void update(){
     sprintf(Time, "%0.2d:%0.2d:%0.2d",  min, sec, ms);
@@ -60,7 +60,7 @@ lcdClear();
 //
  // Enable & configure the SysTick Timer Module
  SysTick->CTRL |= SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
- SysTick->LOAD =300000 -1; // Period = 0x60000
+ SysTick->LOAD =30000 -1; // Period = 0x60000
  SysTick->VAL = 0x01; // Clear value by writing dummy value
  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // Enable interrupt
 
@@ -110,7 +110,7 @@ void SysTick_Handler(void){
     if(stop_state == 0){
         if(start_state == 1){
             ms++;
-            if (ms == 10){
+            if (ms == 100){
                 sec++;
                 //show_name();
                 ms = 0;
@@ -124,6 +124,7 @@ void SysTick_Handler(void){
             }
         }
     }
+
 
 
 
