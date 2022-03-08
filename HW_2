@@ -1,0 +1,179 @@
+	.thumb
+    .text
+    .align 2
+
+P4IN .field 0x40004C21,32 ; Port 4 Input
+P4OUT .field 0x40004C23,32 ; Port 4 Output
+P4DIR .field 0x40004C25,32 ; Port 4 Directions
+P4REN .field 0x40004C27,32 ; Port 4 Resistor Enable
+
+P5OUT .field 0x40004C42,32 ; Port 5 Output
+P5DIR .field 0x40004C44,32 ; Port 5 Direction
+
+DELAY10MS .field 30000, 32
+
+DIET .equ 0x01 ; MACROS for outputs
+COKE .equ 0x02
+PEPSI .equ 0x04
+SPRITE .equ 0x10
+JARRITOS .equ 0x20
+POWERADE .equ 0x40
+ERROR .equ 0x80
+
+swDIET .equ 0x7E ; MACROS for inputs
+swCOKE .equ 0x7D
+swPEPSI .equ 0x7B
+swSPRITE .equ 0x77
+swJARRITOS .equ 0x6F
+swPOWERADE .equ 0x5F
+swMD .equ 0x3F
+NOinput .equ 0x7F
+
+    .global main
+
+main:
+    BL Port4_Init ; initialize P4 & P5
+    BL Port5_Init
+
+loop
+    BL Port4_Input ; read states from switches in P4
+
+    CMP R0, #swDIET ; 0x3E = DIET Msk
+    BEQ swDIETpressed
+
+    CMP R0, #swCOKE ; 0x3D = COKE Msk
+    BEQ swCOKEpressed
+
+    CMP R0, #swPEPSI ; 0x3B = PEPSI Msk
+    BEQ swPEPSIpressed
+
+    CMP R0, #swSPRITE ; 0x37 = SPRITE Msk
+    BEQ swSPRITEpressed
+
+    CMP R0, #swJARRITOS ; 0x2F = JARRITOS Msk
+    BEQ swJARRITOSpressed
+
+    CMP R0, #swPOWERADE ; 0x1F = POWERADE Msk
+    BEQ swPOWERADEpressed
+
+    CMP R0, #swMD ; 0x1F = POWERADE Msk
+    BEQ swMDpressed
+
+    CMP R0, #NOinput ; 0x3F -> NO SWITCHES PRESSED
+    BNE error	  ; else error signal
+    MOV R0, #0
+
+    BL Port5_Output
+    B loop
+
+
+
+SHOW_RANDOM:
+	CMP R0, #1
+   	MOV R0, #DIET ; output-> DIET
+    BL Port5_Output
+
+    CMP R0, #2
+   	MOV R0, #COKE ; output-> DIET
+    BL Port5_Output
+
+    CMP R0, #3
+   	MOV R0, #PEPSI ; output-> DIET
+    BL Port5_Output
+
+    CMP R0, #4
+   	MOV R0, #SPRITE ; output-> DIET
+    BL Port5_Output
+
+    CMP R0, #5
+   	MOV R0, #JARRITOS ; output-> DIET
+    BL Port5_Output
+
+    CMP R0, #6
+   	MOV R0, #POWERADE ; output-> DIET
+    BL Port5_Output
+
+    BX LR
+
+Random:
+	MOV R1, #0x660D
+	MOVT R1, #0x0019
+	MUL R0, R0, R1
+	MOV R1, #0xF3F5
+	MOVT R1, #0x3C6E
+	ADD R0, R0, R1
+	BX LR
+
+Rand6:
+	BL Random
+	MOV R1, #6
+	BL Divide
+	ADD R0, R3, #1
+	BX LR
+
+Divide:
+	UDIV R2, R0, R1
+	MUL R3, R2, R1
+	SUB R3, R0, R3
+	BX LR
+
+swDIETpressed
+    MOV R0, #DIET ; output-> DIET
+    BL Port5_Output
+    B loop
+swCOKEpressed
+    MOV R0, #COKE ; output-> COKE
+    BL Port5_Output
+    B loop
+swPEPSIpressed
+    MOV R0, #PEPSI ; output-> PEPSI
+    BL Port5_Output
+    B loop
+swSPRITEpressed
+    MOV R0, #SPRITE ; output-> SPRITE
+    BL Port5_Output
+    B loop
+swJARRITOSpressed
+    MOV R0, #JARRITOS ; output-> JARRITOS
+    BL Port5_Output
+    B loop
+swPOWERADEpressed
+    MOV R0, #POWERADE ; output-> POWERADE
+    BL Port5_Output
+    B loop
+swMDpressed
+	BL Rand6
+	BL SHOW_RANDOM
+    B loop
+error
+    MOV R0, #ERROR ; error will output
+    BL Port5_Output
+    B loop
+
+Port4_Init:
+    LDR R1, P4REN ; enable internal resitors
+    MOV R0, #0x7F
+    STRB R0, [R1]
+
+    LDR R1, P4OUT ; configure active low-logic
+    MOV R0, #0x7F
+    STRB R0, [R1]
+    BX LR
+
+Port4_Input:
+    LDR R1, P4IN ; reading the input from switches
+    LDRB R0, [R1]
+    AND R0, R0, #0x7F
+    BX LR
+
+Port5_Init:
+    LDR R1, P5DIR ; declare outputs
+    MOV R0, #0xF7
+    STRB R0, [R1]
+    BX LR
+
+Port5_Output:
+     LDR R1, P5OUT ; setting outputs
+     STRB R0, [R1]
+     BX LR
+     .end
